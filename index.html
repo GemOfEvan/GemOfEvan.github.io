@@ -7,8 +7,8 @@
 		var app = new Vue({
 			el: '#app',
 			data: {
-				width: 750,
-				height: 750,
+				width: 800,
+				height: 800,
 				innerRadius: 60,
 				outerRadiusMultiplier: 4,
 				lastMove: '',
@@ -44,7 +44,7 @@
 							cy: this.canvasCenterY, 
 							rx: this.outerRadius,
 							ry: this.outerRadius,
-							fill: 'blue',
+							fill: 'cornflowerBlue',
 							label: '身',
 							sublabel: 'Body'
 						},
@@ -53,7 +53,7 @@
 							cy: this.canvasCenterY, 
 							rx: this.innerRadius,
 							ry: this.innerRadius,
-							fill: 'green',
+							fill: 'forestGreen',
 							label: '心',
 							sublabel: 'Mind'
 						},
@@ -354,6 +354,7 @@
 	<style>
 		* {
 			user-select: none;
+			box-sizing: border-box;
 		}
 
 		body {
@@ -395,14 +396,12 @@
 		}
 
 		.faceBg {
-			fill-opacity: 1;
 			fill: lightgray;
 			stroke: black;
 			stroke-width: 1px;
 		}
 
 		.face {
-			fill-opacity: 0.6;
 			cursor: pointer;
 			stroke: black;
 			stroke-width: 1px;
@@ -437,23 +436,39 @@
 				opacity: 0.5; 
 			}
 		}
+
+		button {
+			background-color: chocolate;
+			border: 3px outset rgb(171, 85, 24);
+			cursor: pointer;
+			color: white;
+			padding: 8px 12px;
+			font-size: 20px;
+			opacity: 0.8;
+			transition: opacity 0.1s;
+		}
+
+		button:active {
+			border-style: inset;
+		}
+
+		button:hover {
+			opacity: 1;
+		}
 	</style>
 </head>
 <body>
 	<div id="app">
-		<div style="margin: 10px;">
-			<button style="font-size: 20px;" @click="scramble()">Scramble</button>
-			<button style="font-size: 20px;" @click="reset()">Reset</button>
-		</div>
 		<div 
-			style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: auto;"
-			:style="{ maxWidth: width + 'px', maxHeight: height + 'px' }">
+			style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: min(100vw, 100vh); height: min(100vw, 100vh); margin: auto; padding: 10px;"
+			:style="{ maxWidth: width + 60 + 'px', maxHeight: height + 60 + 'px' }">
 			<svg 
 				@contextmenu.prevent
-				width="100%"
 				height="100%"
+				width="100%"
 				:view-box.camel="`0 0 ${width} ${height}`"
-				xmlns="http://www.w3.org/2000/svg">
+				xmlns="http://www.w3.org/2000/svg"
+				style="background-color: bisque; border: 20px outset burlywood;">
 				<g style="transform: translate(40px, 40px) scaleX(-1); transform-box: fill-box; transform-origin: center;">
 					<g style="transform: scale(0.4);">
 						<path sodipodi:rx="100" sodipodi:ry="100" sodipodi:type="arc" d="m132 10a100 100 0 1 1 -100 100" sodipodi:open="true" stroke="#000" sodipodi:cy="110" sodipodi:cx="132" fill="none" stroke-width="20" sodipodi:end="9.424778" sodipodi:start="4.712389"/>
@@ -583,6 +598,9 @@
 					</g>
 				</g>
 			</svg>
+			
+			<button style="position: absolute; bottom: 40px; left: 40px;" @click="scramble()">Scramble</button>
+			<button style="position: absolute; bottom: 40px; right: 40px;" @click="reset()">Reset</button>
 		</div>
 	</div>
 </body>
