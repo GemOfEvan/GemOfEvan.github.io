@@ -7,14 +7,13 @@
 		var app = new Vue({
 			el: '#app',
 			data: {
-				width: 720,
-				height: 720,
-				innerRadius: 100,
-				outerRadiusMultiplier: 3,
+				width: 750,
+				height: 750,
+				innerRadius: 60,
+				outerRadiusMultiplier: 4,
 				lastMove: '',
 				cube: new Cube(),
-				animationStage: 1,
-				isSolved: true
+				animationStage: 3,
 			},
 			computed: {
 				pieceRadius () {
@@ -45,55 +44,71 @@
 							cy: this.canvasCenterY, 
 							rx: this.outerRadius,
 							ry: this.outerRadius,
-							'stroke-dasharray': '10 4',
-							fill: 'blue'
+							fill: 'blue',
+							label: '身',
+							sublabel: 'Body'
 						},
 						F: {
 							cx: this.canvasCenterX, 
 							cy: this.canvasCenterY, 
 							rx: this.innerRadius,
 							ry: this.innerRadius,
-							'stroke-dasharray': '10 4',
-							fill: 'green'
+							fill: 'green',
+							label: '心',
+							sublabel: 'Mind'
 						},
 						U: {
 							cx: this.canvasCenterX, 
 							cy: this.canvasCenterY - this.edgeEllipseOffset, 
 							rx: this.edgeEllipseLongRadius,
 							ry: this.edgeEllipseShortRadius,
-							fill: 'yellow'
+							fill: 'yellow',
+							label: '天',
+							sublabel: 'Heaven'
 						},
 						L: {
 							cx: this.canvasCenterX - this.edgeEllipseOffset, 
 							cy: this.canvasCenterY, 
 							rx: this.edgeEllipseShortRadius,
 							ry: this.edgeEllipseLongRadius,
-							fill: 'red'
+							fill: '#ff726f',
+							label: '真',
+							sublabel: 'Truth'
 						},
 						R: {
 							cx: this.canvasCenterX + this.edgeEllipseOffset, 
 							cy: this.canvasCenterY, 
 							rx: this.edgeEllipseShortRadius,
 							ry: this.edgeEllipseLongRadius,
-							fill: 'orange'
+							fill: 'orange',
+							label: '美',
+							sublabel: 'Beauty'
 						},
 						D: {
 							cx: this.canvasCenterX, 
 							cy: this.canvasCenterY + this.edgeEllipseOffset, 
 							rx: this.edgeEllipseLongRadius,
 							ry: this.edgeEllipseShortRadius,
-							fill: 'white'
+							fill: 'white',
+							label: '地',
+							sublabel: 'Earth'
 						}
 					}
 				},
 				drawnFacePaths () {
 					const facePaths = JSON.parse(JSON.stringify(this.facePaths))
 
-					facePaths.F.rx -= this.pieceRadius
-					facePaths.F.ry -= this.pieceRadius
+					Object.keys(facePaths)
+						.filter(face => face !== 'B')
+						.forEach(face => {
+							facePaths[face].rx -= this.pieceRadius
+							facePaths[face].ry -= this.pieceRadius
+						})
+
+			
 					
-					facePaths.B.rx += this.pieceRadius
-					facePaths.B.ry += this.pieceRadius
+					facePaths.B.rx += this.pieceRadius * 3
+					facePaths.B.ry += this.pieceRadius * 3
 
 					return facePaths
 				},
@@ -106,6 +121,7 @@
 								U: 75,
 								R: 0
 							},
+							label: '天'
 						},
 						{
 							x: 0,
@@ -113,7 +129,8 @@
 							faces: {
 								U: 50,
 								F: 0
-							}
+							},
+							label: '天'
 						},
 						{
 							x: -this.edgeEllipseOffset,
@@ -121,7 +138,8 @@
 							faces: {
 								U: 25,
 								L: 0
-							}
+							},
+							label: '天'
 						},
 						{
 							x: 0,
@@ -129,7 +147,8 @@
 							faces: {
 								U: 0,
 								B: 0
-							}
+							},
+							label: '天'
 						},
 						{
 							x: this.edgeEllipseOffset,
@@ -137,7 +156,8 @@
 							faces: {
 								D: 75,
 								R: 50
-							}
+							},
+							label: '地'
 						},
 						{
 							x: 0,
@@ -145,7 +165,8 @@
 							faces: {
 								D: 0,
 								F: 50
-							}
+							},
+							label: '地'
 						},
 						{
 							x: -this.edgeEllipseOffset,
@@ -153,7 +174,8 @@
 							faces: {
 								D: 25,
 								L: 50
-							}
+							},
+							label: '地'
 						},
 						{
 							x: 0,
@@ -161,7 +183,8 @@
 							faces: {
 								D: 50,
 								B: 50
-							}
+							},
+							label: '地'
 						},
 						{
 							x: this.innerRadius,
@@ -169,7 +192,8 @@
 							faces: {
 								R: 25,
 								F: 75
-							}
+							},
+							label: '美'
 						},
 						{
 							x: -this.innerRadius,
@@ -177,7 +201,8 @@
 							faces: {
 								L: 75,
 								F: 25
-							}
+							},
+							label: '真'
 						},
 						{
 							x: -this.outerRadius,
@@ -185,7 +210,8 @@
 							faces: {
 								L: 25,
 								B: 25
-							}
+							},
+							label: '真'
 						},
 						{
 							x: this.outerRadius,
@@ -193,7 +219,8 @@
 							faces: {
 								R: 75,
 								B: 75
-							}
+							},
+							label: '美'
 						}
 					].map(pos => ({
 						...pos,
@@ -203,41 +230,51 @@
 						y: pos.y + this.canvasCenterY
 					}))
 				},
+				transitionDuration () {
+					return {
+						B: 0.5,
+						F: 0.15,
+						U: 0.3,
+						D: 0.3,
+						L: 0.3,
+						R: 0.3
+					}[this.lastMove[0]]
+				},
 				edges () {
 					return this.cube.ep
 						.map((pieceKey, pos) => {
 							const piece = this.epMap[pieceKey]
 							const mappedPos = this.epMap[pos]
 
-							if (this.lastMove[0] in mappedPos.faces) {
+							if (this.animationStage < 2 && this.lastMove[0] in mappedPos.faces) {
 								const animatePercentage = mappedPos.faces[this.lastMove[0]]
 								const facePath = this.facePaths[this.lastMove[0]]
 								const isClockwise = (this.lastMove[1] === '\'') === (this.lastMove[0] === 'B')
-								const rotateDeg = this.lastMove[0] === 'B' ? -180 * this.outerRadiusMultiplier : 180 
-								const transitionDuration = {
-									B: 0.5,
-									F: 0.3,
-									U: 0.3,
-									D: 0.3,
-									L: 0.3,
-									R: 0.3
-								}[this.lastMove[0]]
+								const rotateDeg = this.lastMove[0] === 'B' 
+									? -180 * 5
+									: this.lastMove[0] === 'F'
+										? 180  
+										: 360
+
+								const fromDeg = !!this.cube.eo[pos] === ['F', 'B'].includes(this.lastMove[0]) ? 0 : 180
+								const toDeg = fromDeg + (isClockwise ? rotateDeg : -rotateDeg)
 
 								return {
 									key: pieceKey,
 									class: Object.keys(mappedPos.faces),
+									label: piece.label,
 									style: {
 										offsetPath: `path('M ${facePath.cx} ${facePath.cy - facePath.ry} a ${facePath.rx} ${facePath.ry} 0 1 0 1 0 z')`,
 										...{
 											0: {
 												offsetDistance: `${animatePercentage + (isClockwise ? 25 : -25)}%`,
-												transform: ['F', 'B'].includes(this.lastMove[0]) === !this.cube.eo[pos] ? (isClockwise && ['F', 'B'].includes(this.lastMove[0]) ? `rotate(${-rotateDeg}deg)` : `rotate(${rotateDeg}deg)`) : 'rotate(0deg)',
+												transform: `rotate(${fromDeg}deg)`
 											},
 											1: {
 												offsetDistance: `${animatePercentage}%`,
-												transition: `offset-distance linear ${transitionDuration}s, transform linear ${transitionDuration}s`,
+												transition: `offset-distance linear ${this.transitionDuration}s, transform linear ${this.transitionDuration}s`,
 												animationDirection: isClockwise ? 'normal' : 'reverse',
-												transform: this.cube.eo[pos] ? (isClockwise || !['F', 'B'].includes(this.lastMove[0]) ? `rotate(${rotateDeg}deg)` : `rotate(${-rotateDeg}deg)`) : 'rotate(0deg)'
+												transform: `rotate(${toDeg}deg)`
 											}
 										}[this.animationStage]
 									}
@@ -246,7 +283,12 @@
 
 							return {
 								key: pieceKey,
-								class: Object.keys(mappedPos.faces),
+								isSolved: pieceKey === pos && !this.cube.eo[pos],
+								class: [ 
+									Object.keys(mappedPos.faces),
+									...(pieceKey === pos && !this.cube.eo[pos]) ? ['solved'] : []
+								],
+								label: piece.label,
 								style: {
 									offsetPath: `path('M ${mappedPos.x} ${mappedPos.y}')`,
 									transform: `${this.cube.eo[pos] ? `rotate(180deg)` : 'rotate(0deg)'}`
@@ -254,6 +296,9 @@
 							}
 						})
 				},
+				isSolved () {
+					return this.edges.every(edge => edge.isSolved)
+				}
 			},
 			methods: {
 				scramble () {
@@ -263,27 +308,42 @@
 					cube.randomize()	
 
 					this.cube = cube
-
-					this.isSolved = false
 				},
 				reset () {
 					this.lastMove = ''
 
 					this.cube = new Cube()
-
-					this.isSolved = true
 				},
-				move (alg) {
+				async move (alg) {
+					if (this.animationStage !== 3) {
+						await new Promise((resolve, reject) => {
+							const unwatch = this.$watch('animationStage', () => {
+								if (this.animationStage === 3) {
+									this.animationStage = 4
+
+									resolve()
+									unwatch()
+								}
+							})
+						})
+					}
+
 					this.lastMove = alg
 
 					this.cube.move(alg)
-
-					this.isSolved = this.cube.eo.every(eo => !eo) && this.cube.ep.every((ep, index) => ep === index)
 
 					requestAnimationFrame(() => {
 						this.animationStage = 0
 						requestAnimationFrame(() => {
 							this.animationStage = 1
+							requestAnimationFrame(() => {
+								setTimeout(() => {
+									this.animationStage = 2
+									requestAnimationFrame(() => {
+										this.animationStage = 3
+									})
+								}, this.transitionDuration * 1000)
+							})
 						})
 					})
 				}
@@ -296,51 +356,56 @@
 			user-select: none;
 		}
 
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: beige;
+		}
+
 		#U:hover ~ .U .majorCircle {
-			stroke-width: 3;
-			stroke: purple;
+			stroke-width: 2px;
 		}
 		
 		#D:hover ~ .D .majorCircle {
-			stroke-width: 3;
-			stroke: purple;
+			stroke-width: 2px;
 		}
 		
 		#R:hover ~ .R .majorCircle {
-			stroke-width: 3;
-			stroke: purple;
+			stroke-width: 2px;
 		}
 
 		#L:hover ~ .L .majorCircle {
-			stroke-width: 3;
-			stroke: purple;
+			stroke-width: 2px;
 		}
 		
 		#F:hover ~ .F .majorCircle {
-			stroke-width: 3;
-			stroke: purple;
+			stroke-width: 2px;
 		}
 		
 		#B:hover ~ .B .majorCircle {
-			stroke-width: 3;
-			stroke: purple;
+			stroke-width: 2px;
+		}
+
+		.faceGroup:hover .face {
+			stroke-width: 2px;
+		}
+
+		#B:hover ~ .faceBg {
+			stroke-width: 2px;
 		}
 
 		.faceBg {
 			fill-opacity: 1;
 			fill: lightgray;
+			stroke: black;
+			stroke-width: 1px;
 		}
 
 		.face {
-			stroke-width: 1;
-			stroke: black;
 			fill-opacity: 0.6;
 			cursor: pointer;
-		}
-		
-		.face:hover {
-			stroke-width: 3;
-			stroke: purple
+			stroke: black;
+			stroke-width: 1px;
 		}
 
 		.piece {
@@ -348,92 +413,176 @@
 			transform-box: fill-box;
 			transform-origin: center;
 		}
+
+		.majorCircle {
+			stroke: black;
+			stroke-width: 1px;
+		}
+
+		.majorCircleOverlay {
+			fill: none;
+		}
+
+		.solved .majorCircleOverlay {
+			stroke-width: 10px;
+			stroke: #00FF00;
+			opacity: 0.5;
+		}
+
+		@keyframes fadein {
+			from { 
+				opacity: 0; 
+			}
+			to   { 
+				opacity: 0.5; 
+			}
+		}
 	</style>
 </head>
 <body>
 	<div id="app">
-		<div
-			style="font: 20px arial;">
-			Left click = clockwise. Right click = counter-clockwise.
-			<br>
-			To solve, match the colors and have all the dots in the up position.
+		<div style="margin: 10px;">
+			<button style="font-size: 20px;" @click="scramble()">Scramble</button>
+			<button style="font-size: 20px;" @click="reset()">Reset</button>
 		</div>
-		<div style="margin: 10px 0;">
-			<button @click="scramble()">Scramble</button>
-			<button @click="reset()">Reset</button>
-		</div>
-		<div style="display: flex; position: relative;">
-			<div
-				v-if="isSolved"
-				style="font: 30px arial; position: absolute; top: 10px; left: 10px;">
-				Solved!
-			</div>
-			<div :style="isSolved ? 'background: lightGreen;' : ''">
-				<svg :width="width" :height="height" xmlns="http://www.w3.org/2000/svg">
-					<g>
-						<template
-							v-for="(path, face) in drawnFacePaths">
+		<div 
+			style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: auto;"
+			:style="{ maxWidth: width + 'px', maxHeight: height + 'px' }">
+			<svg 
+				@contextmenu.prevent
+				width="100%"
+				height="100%"
+				:view-box.camel="`0 0 ${width} ${height}`"
+				xmlns="http://www.w3.org/2000/svg">
+				<g style="transform: translate(40px, 40px) scaleX(-1); transform-box: fill-box; transform-origin: center;">
+					<g style="transform: scale(0.4);">
+						<path sodipodi:rx="100" sodipodi:ry="100" sodipodi:type="arc" d="m132 10a100 100 0 1 1 -100 100" sodipodi:open="true" stroke="#000" sodipodi:cy="110" sodipodi:cx="132" fill="none" stroke-width="20" sodipodi:end="9.424778" sodipodi:start="4.712389"/>
+						<path d="m0 110 32-64 32 64z"/>
+					</g>
+					<path
+						style="transform: scale(2.5) translate(9px, 6px);"
+							d="M 12 2 C 7.5700855 2 4 5.5700855 4 10 L 4 14 C 4 18.429915 7.5700855 22 12 22 C 16.429915 22 20 18.429915 20 14 L 20 10 C 20 5.5700855 16.429915 2 12 2 z M 11 4.09375 L 11 10 L 6 10 C 6 6.9737543 8.1270439 4.5579781 11 4.09375 z M 6 12 L 18 12 L 18 14 C 18 17.370085 15.370085 20 12 20 C 8.6299145 20 6 17.370085 6 14 L 6 12 z"/>
+				</g>
+				<g style="transform: scaleX(-1); transform-box: content-box; transform-origin: center;">
+					<g style="transform: translate(40px, 40px) scaleX(-1); transform-box: fill-box; transform-origin: center;">
+						<g style="transform: scale(0.4);">
+							<path sodipodi:rx="100" sodipodi:ry="100" sodipodi:type="arc" d="m132 10a100 100 0 1 1 -100 100" sodipodi:open="true" stroke="#000" sodipodi:cy="110" sodipodi:cx="132" fill="none" stroke-width="20" sodipodi:end="9.424778" sodipodi:start="4.712389"/>
+							<path d="m0 110 32-64 32 64z"/>
+						</g>
+						<path
+							style="transform: scale(2.5) translate(9px, 6px);"
+							d="M 12 2 C 7.5700855 2 4 5.5700855 4 10 L 4 14 C 4 18.429915 7.5700855 22 12 22 C 16.429915 22 20 18.429915 20 14 L 20 10 C 20 5.5700855 16.429915 2 12 2 z M 11 4.09375 L 11 10 L 6 10 C 6 6.9737543 8.1270439 4.5579781 11 4.09375 z M 6 12 L 18 12 L 18 14 C 18 17.370085 15.370085 20 12 20 C 8.6299145 20 6 17.370085 6 14 L 6 12 z"/>
+					</g>
+				</g>
+				<g>
+					<template
+						v-for="(path, face) in drawnFacePaths">
+						<g
+							v-if="face === 'B'"
+							:key="face"
+							:id="face"
+							class="faceGroup"
+							@click="move(face !== 'B' ? face + '\'' : face)"
+							@contextmenu.prevent="move(face !== 'B' ? face : face + '\'')"
+							style="cursor: pointer;">
 							<ellipse 
-								v-if="face === 'B'"
-								:id="face"
-								:key="face"
-								@click="move(face === 'B' ? face + '\'' : face)"
-								@contextmenu.prevent="move(face === 'B' ? face : face + '\'')"
+								v-if="isSolved"
+								fill="none"
+								style="			
+									stroke-width: 20px;
+									stroke: #00FF00;
+									animation: fadein 0.2s ease-out;
+									opacity: 0.5;
+								"
+								:cx="path.cx"
+								:cy="path.cy"
+								:rx="path.rx + 10"
+								:ry="path.ry + 10"/>
+							<ellipse 
 								class="face"
 								v-bind="path"/>
-						</template>
-
-						<template
-							v-for="(path, face) in drawnFacePaths">
-							<ellipse 
-								v-if="face !== 'B'"
-								:key="face + 'bg'"
-								class="faceBg"
-								v-bind="path"/>
-						</template>
-						
-						<circle 
-							class="faceBg"
-							:cx="canvasCenterX"
-							:cy="canvasCenterY"
-							:r="edgeEllipseOffset + edgeEllipseShortRadius"/>
-						
-						<template
-							v-for="(path, face) in drawnFacePaths">
-							<ellipse 
-								v-if="face !== 'B'"
-								:id="face"
-								:key="face"
-								@click="move(face === 'B' ? face + '\'' : face)"
-								@contextmenu.prevent="move(face === 'B' ? face : face + '\'')"
-								class="face"
-								v-bind="path"/>
-						</template>
-						<g 
-							v-for="edge in edges" 
-							v-bind="edge"
-							class="piece">
-							<circle 
-								class="majorCircle"
-								:r="pieceRadius"
-								:fill="facePaths[epMap[edge.key].majorFace].fill"
-								stroke="black"
-								stroke-dasharray="10 4"/>
-							<circle 
-								class="minorCircle"
-								:r="pieceRadius / 4"
-								:cy="-pieceRadius * 3 / 4"
-								cx="0"
-								:fill="facePaths[epMap[edge.key].minorFace].fill"/>
 							<text
-								dominant-baseline="middle" 
-								text-anchor="middle"
-								style="font: 20px arial;">
+								:x="path.cx - 0.707 * path.rx"
+								:y="path.cy + pieceRadius - 0.707 * path.ry">
+								<tspan 
+									:x="path.cx - 0.707 * path.rx"
+									text-anchor="middle"
+									dominant-baseline="middle"
+									style="font: 20px arial; font-weight: bold;">{{ path.label }}</tspan>
+								<tspan 
+									:x="path.cx - 0.707 * path.rx"
+									dy="20"
+									text-anchor="middle"
+									dominant-baseline="middle"
+									style="font: 15px arial; font-weight: bold;">{{ path.sublabel }}</tspan>
 							</text>
 						</g>
+					</template>
+					
+					<circle 
+						class="faceBg"
+						:cx="canvasCenterX"
+						:cy="canvasCenterY"
+						:r="edgeEllipseOffset + edgeEllipseShortRadius + pieceRadius"/>
+					
+					<template
+						v-for="(path, face) in drawnFacePaths">
+						<g
+							v-if="face !== 'B'"
+							:key="face"
+							:id="face"
+							class="faceGroup"
+							@click="move(face !== 'B' ? face + '\'' : face)"
+							@contextmenu.prevent="move(face !== 'B' ? face : face + '\'')"
+							style="cursor: pointer;">
+							<ellipse 
+								class="face"
+								v-bind="path"/>
+							<text
+								:x="path.cx"
+								:y="path.cy">
+								<tspan 
+									:x="path.cx" 
+									dy="-10"
+									text-anchor="middle"
+									dominant-baseline="middle"
+									style="font: 20px arial; font-weight: bold;">{{ path.label }}</tspan>
+								<tspan 
+									:x="path.cx" 
+									dy="20"
+									text-anchor="middle"
+									dominant-baseline="middle"
+									style="font: 15px arial; font-weight: bold;">{{ path.sublabel }}</tspan>
+							</text>
+						</g>
+					</template>
+					<g 
+						v-for="edge in edges" 
+						v-bind="edge"
+						class="piece">
+						<circle 
+							class="majorCircleOverlay"
+							:r="pieceRadius"/>
+						<circle 
+							class="majorCircle"
+							:r="pieceRadius"
+							:fill="facePaths[epMap[edge.key].majorFace].fill"/>
+						<circle 
+							class="minorCircle"
+							:r="pieceRadius / 3"
+							:cy="-pieceRadius * 2 / 3"
+							cx="0"
+							:fill="facePaths[epMap[edge.key].minorFace].fill"/>
+						<text
+							stroke="none"
+							dominant-baseline="hanging" 
+							text-anchor="middle"
+							style="font-size: 20px; font-weight: bold;">
+							{{ edge.label }}
+						</text>
 					</g>
-				</svg>
-			</div>
+				</g>
+			</svg>
 		</div>
 	</div>
 </body>
