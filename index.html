@@ -7,8 +7,8 @@
 		var app = new Vue({
 			el: '#app',
 			data: {
-				width: 800,
-				height: 800,
+				width: 720,
+				height: 720,
 				innerRadius: 100,
 				outerRadiusMultiplier: 3,
 				lastMove: '',
@@ -45,7 +45,7 @@
 							cy: this.canvasCenterY, 
 							rx: this.outerRadius,
 							ry: this.outerRadius,
-							'stroke-dasharray': '10 10',
+							'stroke-dasharray': '10 4',
 							fill: 'blue'
 						},
 						F: {
@@ -53,7 +53,7 @@
 							cy: this.canvasCenterY, 
 							rx: this.innerRadius,
 							ry: this.innerRadius,
-							'stroke-dasharray': '10 10',
+							'stroke-dasharray': '10 4',
 							fill: 'green'
 						},
 						U: {
@@ -292,28 +292,43 @@
 	}
 	</script>
 	<style>
-		#U:hover ~ .U {
-			filter: brightness(0.8);
-		}
-		
-		#D:hover ~ .D {
-			filter: brightness(0.8);
-		}
-		
-		#R:hover ~ .R {
-			filter: brightness(0.8);
+		* {
+			user-select: none;
 		}
 
-		#L:hover ~ .L {
-			filter: brightness(0.8);
+		#U:hover ~ .U .majorCircle {
+			stroke-width: 3;
+			stroke: purple;
 		}
 		
-		#F:hover ~ .F {
-			filter: brightness(0.8);
+		#D:hover ~ .D .majorCircle {
+			stroke-width: 3;
+			stroke: purple;
 		}
 		
-		#B:hover ~ .B {
-			filter: brightness(0.8);
+		#R:hover ~ .R .majorCircle {
+			stroke-width: 3;
+			stroke: purple;
+		}
+
+		#L:hover ~ .L .majorCircle {
+			stroke-width: 3;
+			stroke: purple;
+		}
+		
+		#F:hover ~ .F .majorCircle {
+			stroke-width: 3;
+			stroke: purple;
+		}
+		
+		#B:hover ~ .B .majorCircle {
+			stroke-width: 3;
+			stroke: purple;
+		}
+
+		.faceBg {
+			fill-opacity: 1;
+			fill: lightgray;
 		}
 
 		.face {
@@ -324,8 +339,8 @@
 		}
 		
 		.face:hover {
-			stroke-width: 2;
-			stroke: red;
+			stroke-width: 3;
+			stroke: purple
 		}
 
 		.piece {
@@ -338,50 +353,88 @@
 <body>
 	<div id="app">
 		<div
-			:style="isSolved ? '' : 'visibility: hidden;'"
-			style="font: 30px arial;">
-			Solved!
-		</div>
-		<div
 			style="font: 20px arial;">
 			Left click = clockwise. Right click = counter-clockwise.
 			<br>
 			To solve, match the colors and have all the dots in the up position.
 		</div>
-		<svg :width="width" :height="height" xmlns="http://www.w3.org/2000/svg">
-			<g>
-				<ellipse 
-					v-for="(path, face) in drawnFacePaths"
-					:id="face"
-					:key="face"
-					@click="move(face === 'B' ? face + '\'' : face)"
-					@contextmenu.prevent="move(face === 'B' ? face : face + '\'')"
-					class="face"
-					v-bind="path"/>
-				<g 
-					v-for="edge in edges" 
-					v-bind="edge"
-					class="piece">
-					<circle 
-						:r="pieceRadius"
-						:fill="facePaths[epMap[edge.key].majorFace].fill"
-						stroke="black"
-						stroke-dasharray="10 10"/>
-					<circle 
-						:r="pieceRadius / 4"
-						:cy="-pieceRadius * 3 / 4"
-						cx="0"
-						:fill="facePaths[epMap[edge.key].minorFace].fill"/>
-                    <text
-                        dominant-baseline="middle" 
-                        text-anchor="middle"
-						style="font: 20px arial;">
-                    </text>
-				</g>
-			</g>
-		</svg>
-		<button @click="scramble()">Scramble</button>
-		<button @click="reset()">Reset</button>
+		<div style="margin: 10px 0;">
+			<button @click="scramble()">Scramble</button>
+			<button @click="reset()">Reset</button>
+		</div>
+		<div style="display: flex; position: relative;">
+			<div
+				v-if="isSolved"
+				style="font: 30px arial; position: absolute; top: 10px; left: 10px;">
+				Solved!
+			</div>
+			<div :style="isSolved ? 'background: lightGreen;' : ''">
+				<svg :width="width" :height="height" xmlns="http://www.w3.org/2000/svg">
+					<g>
+						<template
+							v-for="(path, face) in drawnFacePaths">
+							<ellipse 
+								v-if="face === 'B'"
+								:id="face"
+								:key="face"
+								@click="move(face === 'B' ? face + '\'' : face)"
+								@contextmenu.prevent="move(face === 'B' ? face : face + '\'')"
+								class="face"
+								v-bind="path"/>
+						</template>
+
+						<template
+							v-for="(path, face) in drawnFacePaths">
+							<ellipse 
+								v-if="face !== 'B'"
+								:key="face + 'bg'"
+								class="faceBg"
+								v-bind="path"/>
+						</template>
+						
+						<circle 
+							class="faceBg"
+							:cx="canvasCenterX"
+							:cy="canvasCenterY"
+							:r="edgeEllipseOffset + edgeEllipseShortRadius"/>
+						
+						<template
+							v-for="(path, face) in drawnFacePaths">
+							<ellipse 
+								v-if="face !== 'B'"
+								:id="face"
+								:key="face"
+								@click="move(face === 'B' ? face + '\'' : face)"
+								@contextmenu.prevent="move(face === 'B' ? face : face + '\'')"
+								class="face"
+								v-bind="path"/>
+						</template>
+						<g 
+							v-for="edge in edges" 
+							v-bind="edge"
+							class="piece">
+							<circle 
+								class="majorCircle"
+								:r="pieceRadius"
+								:fill="facePaths[epMap[edge.key].majorFace].fill"
+								stroke="black"
+								stroke-dasharray="10 4"/>
+							<circle 
+								class="minorCircle"
+								:r="pieceRadius / 4"
+								:cy="-pieceRadius * 3 / 4"
+								cx="0"
+								:fill="facePaths[epMap[edge.key].minorFace].fill"/>
+							<text
+								dominant-baseline="middle" 
+								text-anchor="middle"
+								style="font: 20px arial;">
+							</text>
+						</g>
+					</g>
+				</svg>
+			</div>
+		</div>
 	</div>
 </body>
 </html>
