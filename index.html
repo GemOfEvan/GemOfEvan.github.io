@@ -1,0 +1,387 @@
+<html>
+<head>
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script src="http://ldez.github.io//cubejs/lib/cube.js"></script>
+	<script type="text/javascript">
+	window.onload = () => {
+		var app = new Vue({
+			el: '#app',
+			data: {
+				width: 800,
+				height: 800,
+				innerRadius: 100,
+				outerRadiusMultiplier: 3,
+				lastMove: '',
+				cube: new Cube(),
+				animationStage: 1,
+				isSolved: true
+			},
+			computed: {
+				pieceRadius () {
+					return this.innerRadius / 3
+				},
+				outerRadius () {
+					return this.innerRadius * this.outerRadiusMultiplier
+				},
+				canvasCenterX () {
+					return this.width / 2
+				},
+				canvasCenterY () {
+					return this.height / 2
+				},
+				edgeEllipseOffset() {
+					return this.innerRadius + this.edgeEllipseShortRadius
+				},
+				edgeEllipseShortRadius () {
+					return (this.outerRadius - this.innerRadius) / 2
+				},
+				edgeEllipseLongRadius () {
+					return this.innerRadius + this.edgeEllipseShortRadius
+				},
+				facePaths () {
+					return {
+						B: {
+							cx: this.canvasCenterX, 
+							cy: this.canvasCenterY, 
+							rx: this.outerRadius,
+							ry: this.outerRadius,
+							'stroke-dasharray': '10 10',
+							fill: 'blue'
+						},
+						F: {
+							cx: this.canvasCenterX, 
+							cy: this.canvasCenterY, 
+							rx: this.innerRadius,
+							ry: this.innerRadius,
+							'stroke-dasharray': '10 10',
+							fill: 'green'
+						},
+						U: {
+							cx: this.canvasCenterX, 
+							cy: this.canvasCenterY - this.edgeEllipseOffset, 
+							rx: this.edgeEllipseLongRadius,
+							ry: this.edgeEllipseShortRadius,
+							fill: 'yellow'
+						},
+						L: {
+							cx: this.canvasCenterX - this.edgeEllipseOffset, 
+							cy: this.canvasCenterY, 
+							rx: this.edgeEllipseShortRadius,
+							ry: this.edgeEllipseLongRadius,
+							fill: 'red'
+						},
+						R: {
+							cx: this.canvasCenterX + this.edgeEllipseOffset, 
+							cy: this.canvasCenterY, 
+							rx: this.edgeEllipseShortRadius,
+							ry: this.edgeEllipseLongRadius,
+							fill: 'orange'
+						},
+						D: {
+							cx: this.canvasCenterX, 
+							cy: this.canvasCenterY + this.edgeEllipseOffset, 
+							rx: this.edgeEllipseLongRadius,
+							ry: this.edgeEllipseShortRadius,
+							fill: 'white'
+						}
+					}
+				},
+				drawnFacePaths () {
+					const facePaths = JSON.parse(JSON.stringify(this.facePaths))
+
+					facePaths.F.rx -= this.pieceRadius
+					facePaths.F.ry -= this.pieceRadius
+					
+					facePaths.B.rx += this.pieceRadius
+					facePaths.B.ry += this.pieceRadius
+
+					return facePaths
+				},
+				epMap () {
+					return [
+						{
+							x: this.edgeEllipseOffset,
+							y: -this.edgeEllipseOffset,
+							faces: {
+								U: 75,
+								R: 0
+							},
+						},
+						{
+							x: 0,
+							y: -this.innerRadius,
+							faces: {
+								U: 50,
+								F: 0
+							}
+						},
+						{
+							x: -this.edgeEllipseOffset,
+							y: -this.edgeEllipseOffset,
+							faces: {
+								U: 25,
+								L: 0
+							}
+						},
+						{
+							x: 0,
+							y: -this.outerRadius,
+							faces: {
+								U: 0,
+								B: 0
+							}
+						},
+						{
+							x: this.edgeEllipseOffset,
+							y: this.edgeEllipseOffset,
+							faces: {
+								D: 75,
+								R: 50
+							}
+						},
+						{
+							x: 0,
+							y: this.innerRadius,
+							faces: {
+								D: 0,
+								F: 50
+							}
+						},
+						{
+							x: -this.edgeEllipseOffset,
+							y: this.edgeEllipseOffset,
+							faces: {
+								D: 25,
+								L: 50
+							}
+						},
+						{
+							x: 0,
+							y: this.outerRadius,
+							faces: {
+								D: 50,
+								B: 50
+							}
+						},
+						{
+							x: this.innerRadius,
+							y: 0,
+							faces: {
+								R: 25,
+								F: 75
+							}
+						},
+						{
+							x: -this.innerRadius,
+							y: 0,
+							faces: {
+								L: 75,
+								F: 25
+							}
+						},
+						{
+							x: -this.outerRadius,
+							y: 0,
+							faces: {
+								L: 25,
+								B: 25
+							}
+						},
+						{
+							x: this.outerRadius,
+							y: 0,
+							faces: {
+								R: 75,
+								B: 75
+							}
+						}
+					].map(pos => ({
+						...pos,
+						majorFace: Object.keys(pos.faces)[0],
+						minorFace: Object.keys(pos.faces)[1],
+						x: pos.x + this.canvasCenterX,
+						y: pos.y + this.canvasCenterY
+					}))
+				},
+				edges () {
+					return this.cube.ep
+						.map((pieceKey, pos) => {
+							const piece = this.epMap[pieceKey]
+							const mappedPos = this.epMap[pos]
+
+							if (this.lastMove[0] in mappedPos.faces) {
+								const animatePercentage = mappedPos.faces[this.lastMove[0]]
+								const facePath = this.facePaths[this.lastMove[0]]
+								const isClockwise = (this.lastMove[1] === '\'') === (this.lastMove[0] === 'B')
+								const rotateDeg = this.lastMove[0] === 'B' ? -180 * this.outerRadiusMultiplier : 180 
+								const transitionDuration = {
+									B: 0.5,
+									F: 0.3,
+									U: 0.3,
+									D: 0.3,
+									L: 0.3,
+									R: 0.3
+								}[this.lastMove[0]]
+
+								return {
+									key: pieceKey,
+									class: Object.keys(mappedPos.faces),
+									style: {
+										offsetPath: `path('M ${facePath.cx} ${facePath.cy - facePath.ry} a ${facePath.rx} ${facePath.ry} 0 1 0 1 0 z')`,
+										...{
+											0: {
+												offsetDistance: `${animatePercentage + (isClockwise ? 25 : -25)}%`,
+												transform: ['F', 'B'].includes(this.lastMove[0]) === !this.cube.eo[pos] ? (isClockwise && ['F', 'B'].includes(this.lastMove[0]) ? `rotate(${-rotateDeg}deg)` : `rotate(${rotateDeg}deg)`) : 'rotate(0deg)',
+											},
+											1: {
+												offsetDistance: `${animatePercentage}%`,
+												transition: `offset-distance linear ${transitionDuration}s, transform linear ${transitionDuration}s`,
+												animationDirection: isClockwise ? 'normal' : 'reverse',
+												transform: this.cube.eo[pos] ? (isClockwise || !['F', 'B'].includes(this.lastMove[0]) ? `rotate(${rotateDeg}deg)` : `rotate(${-rotateDeg}deg)`) : 'rotate(0deg)'
+											}
+										}[this.animationStage]
+									}
+								}
+							}
+
+							return {
+								key: pieceKey,
+								class: Object.keys(mappedPos.faces),
+								style: {
+									offsetPath: `path('M ${mappedPos.x} ${mappedPos.y}')`,
+									transform: `${this.cube.eo[pos] ? `rotate(180deg)` : 'rotate(0deg)'}`
+								}
+							}
+						})
+				},
+			},
+			methods: {
+				scramble () {
+					this.lastMove = ''
+
+					const cube = new Cube()
+					cube.randomize()	
+
+					this.cube = cube
+
+					this.isSolved = false
+				},
+				reset () {
+					this.lastMove = ''
+
+					this.cube = new Cube()
+
+					this.isSolved = true
+				},
+				move (alg) {
+					this.lastMove = alg
+
+					this.cube.move(alg)
+
+					this.isSolved = this.cube.eo.every(eo => !eo) && this.cube.ep.every((ep, index) => ep === index)
+
+					requestAnimationFrame(() => {
+						this.animationStage = 0
+						requestAnimationFrame(() => {
+							this.animationStage = 1
+						})
+					})
+				}
+			}
+		})
+	}
+	</script>
+	<style>
+		#U:hover ~ .U {
+			filter: brightness(0.8);
+		}
+		
+		#D:hover ~ .D {
+			filter: brightness(0.8);
+		}
+		
+		#R:hover ~ .R {
+			filter: brightness(0.8);
+		}
+
+		#L:hover ~ .L {
+			filter: brightness(0.8);
+		}
+		
+		#F:hover ~ .F {
+			filter: brightness(0.8);
+		}
+		
+		#B:hover ~ .B {
+			filter: brightness(0.8);
+		}
+
+		.face {
+			stroke-width: 1;
+			stroke: black;
+			fill-opacity: 0.6;
+			cursor: pointer;
+		}
+		
+		.face:hover {
+			stroke-width: 2;
+			stroke: red;
+		}
+
+		.piece {
+			offset-rotate: 0deg;
+			transform-box: fill-box;
+			transform-origin: center;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div
+			:style="isSolved ? '' : 'visibility: hidden;'"
+			style="font: 30px arial;">
+			Solved!
+		</div>
+		<div
+			style="font: 20px arial;">
+			Left click = clockwise. Right click = counter-clockwise.
+			<br>
+			To solve, match the colors and have all the dots in the up position.
+		</div>
+		<svg :width="width" :height="height" xmlns="http://www.w3.org/2000/svg">
+			<g>
+				<ellipse 
+					v-for="(path, face) in drawnFacePaths"
+					:id="face"
+					:key="face"
+					@click="move(face === 'B' ? face + '\'' : face)"
+					@contextmenu.prevent="move(face === 'B' ? face : face + '\'')"
+					class="face"
+					v-bind="path"/>
+				<g 
+					v-for="edge in edges" 
+					v-bind="edge"
+					class="piece">
+					<circle 
+						:r="pieceRadius"
+						:fill="facePaths[epMap[edge.key].majorFace].fill"
+						stroke="black"
+						stroke-dasharray="10 10"/>
+					<circle 
+						:r="pieceRadius / 4"
+						:cy="-pieceRadius * 3 / 4"
+						cx="0"
+						:fill="facePaths[epMap[edge.key].minorFace].fill"/>
+                    <text
+                        dominant-baseline="middle" 
+                        text-anchor="middle"
+						style="font: 20px arial;">
+                    </text>
+				</g>
+			</g>
+		</svg>
+		<button @click="scramble()">Scramble</button>
+		<button @click="reset()">Reset</button>
+	</div>
+</body>
+</html>
