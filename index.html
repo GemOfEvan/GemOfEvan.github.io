@@ -240,7 +240,7 @@
 				transitionDuration () {
 					return {
 						B: 0.5,
-						F: 0.15,
+						F: 0.25,
 						U: 0.3,
 						D: 0.3,
 						L: 0.3,
@@ -370,52 +370,28 @@
 			background-color: beige;
 		}
 
-		#U:hover ~ .U .majorCircle {
-			stroke-width: 2px;
-		}
-		
-		#D:hover ~ .D .majorCircle {
-			stroke-width: 2px;
-		}
-		
-		#R:hover ~ .R .majorCircle {
-			stroke-width: 2px;
-		}
-
-		#L:hover ~ .L .majorCircle {
-			stroke-width: 2px;
-		}
-		
-		#F:hover ~ .F .majorCircle {
-			stroke-width: 2px;
-		}
-		
-		#B:hover ~ .B .majorCircle {
-			stroke-width: 2px;
-		}
-
 		.faceGroup:hover .face {
-			stroke-width: 2px;
+			stroke: black;
 		}
-
+		
 		#B:hover ~ .faceBg {
-			stroke-width: 2px;
+			stroke: black;
 		}
 
 		.faceBg {
 			fill: lightgray;
-			stroke: black;
-			stroke-width: 1px;
+			stroke: gray;
+			stroke-width: 2px;
 		}
 
 		.face {
 			cursor: pointer;
-			stroke: black;
-			stroke-width: 1px;
+			stroke: gray;
+			stroke-width: 2px;
 		}
 
-		.majorCircle, .face, .faceBg {
-			transition: stroke-width 0.2s;
+		.face, .faceBg {
+			transition: stroke 0.2s;
 		}
 
 		.piece {
@@ -425,13 +401,8 @@
 		}
 
 		.majorCircle {
-			stroke: black;
-			stroke-width: 1px;
-		}
-		
-		.minorCircle {
-			stroke: black;
-			stroke-width: 1px;
+			stroke: rgb(36, 36, 36);
+			stroke-width: 2px;
 		}
 
 		.majorCircleOverlay {
@@ -494,7 +465,7 @@
 					  <stop offset="85%" stop-color="#00FF00" />
 					  <stop offset="100%" stop-color="#00FF0000" />
 					</radialGradient>
-				  </defs>
+        </defs>
 
 				<g style="transform: translate(40px, 40px) scaleX(-1); transform-box: fill-box; transform-origin: center;">
 					<g style="transform: scale(0.4);">
@@ -563,7 +534,7 @@
 						:cx="canvasCenterX"
 						:cy="canvasCenterY"
 						:r="edgeEllipseOffset + edgeEllipseShortRadius + pieceRadius"/>
-					
+
 					<template
 						v-for="(path, face) in drawnFacePaths">
 						<g
@@ -606,15 +577,20 @@
 							:r="pieceRadius"
 							:fill="facePaths[epMap[edge.key].majorFace].fill"/>
 						<circle 
-							class="minorCircle"
-							:r="pieceRadius / 3"
-							:cy="-pieceRadius * 2 / 3"
+							:r="pieceRadius - 5"
+							fill="none"
+							stroke-width="2"
+							:stroke="facePaths[epMap[edge.key].minorFace].darkFill"/>
+						<circle 
+							:r="pieceRadius / 8"
 							cx="0"
-							:fill="facePaths[epMap[edge.key].minorFace].fill"/>
+							:cy="-pieceRadius * 9 / 16"
+							:fill="facePaths[epMap[edge.key].minorFace].darkFill"/>
 						<text
 							:fill="facePaths[epMap[edge.key].minorFace].darkFill"
-							:y="pieceRadius / 3 * 1.5"
 							text-anchor="middle"
+							dominant-baseline="middle"
+							dy="6"
 							class="characterText">
 							{{ edge.label }}
 						</text>
