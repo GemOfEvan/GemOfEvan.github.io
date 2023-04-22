@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+  <!--
+    WARNING! Make sure that you match all Quasar related
+    tags to the same version! (Below it's "@1.22.9")
+  -->
+
+  <head>
+    <meta charset="UTF-8">
+    
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@1.22.9/dist/quasar.min.css" rel="stylesheet" type="text/css">
+    
+    <title>GemOfEvan's Infinite Fusion Calculator</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+
+  <body class="bg-blue-grey-1">
+    <div 
+      id="app"
+      style="display: none;"
+      :style="'display: block;'">
+      <q-infinite-scroll
+        ref="infiniteScroll"
+        class="text-body1 q-pa-md"
+        style="display: grid; grid-template-columns: repeat(auto-fill, 400px); grid-gap: 16px;"
+        @load="loadMoreFusions">
+        <q-card
+          style="width: 400px; align-self: start;"
+          class="q-pa-md">
+          <div class="q-mb-md text-h6">
+            GemOfEvan's Infinite Fusion Calculator
+          </div>
+
+          <q-select 
+            class="q-mb-md"
+            outlined 
+            stack-label
+            label="First Pokemon"
+            v-model="selectedPokemon1"
+            :options="pokemonOptions"
+            option-label="name"
+            use-input
+            input-debounce="0"
+            @filter="(value, update) => updatePokemonOptions(value, update)"
+            multiple
+            clearable
+            @clear="selectedPokemon1 = []">
+            <template slot="selected">
+              <span class="q-mr-sm">{{ selectedPokemon1.length }} selected</span>
+            </template>
+
+            <template slot="before-options">
+              <div class="q-pa-md">
+                <a 
+                  href="#"
+                  @click.prevent="selectedPokemon1 = pokemonOptions.slice()">Select All</a>
+                <a
+                  class="q-ml-md"
+                  href="#"
+                  @click.prevent="selectedPokemon1 = []">Clear</a>
+              </div>
+              <q-separator></q-separator>
+            </template>
+          </q-select>
+
+          <q-select 
+            class="q-mb-md"
+            outlined 
+            stack-label
+            label="Second Pokemon"
+            v-model="selectedPokemon2"
+            :options="pokemonOptions"
+            option-label="name"
+            use-input
+            input-debounce="0"
+            @filter="(value, update) => updatePokemonOptions(value, update)"
+            multiple
+            clearable
+            @clear="selectedPokemon2 = []">
+            <template slot="selected">
+              <span class="q-mr-sm">{{ selectedPokemon2.length }} selected</span>
+            </template>
+
+            <template slot="before-options">
+              <div class="q-pa-md row no-wrap">
+                <a 
+                  href="#"
+                  @click.prevent="selectedPokemon2 = pokemonOptions.slice()">Select All</a>
+                <a
+                  class="q-ml-md"
+                  href="#"
+                  @click.prevent="selectedPokemon2 = []">Clear</a>
+
+                <div class="col"></div>
+
+                <a
+                  class="q-ml-md"
+                  href="#"
+                  @click.prevent="selectedPokemon2 = selectedPokemon1.slice()">Same as First Pokemon</a>
+              </div>
+              <q-separator></q-separator>
+            </template>
+          </q-select>
+
+          <div class="q-mb-md row no-wrap items-center">
+            <div>
+              <q-checkbox 
+                dense 
+                v-model="onlyShowCustomArt" 
+                label="Only Custom Sprites" />
+            </div>
+            <q-btn
+              flat
+              dense
+              icon="info"
+              size="sm"
+              class="q-ml-xs"
+              color="blue-grey">
+              <q-menu 
+                content-class="q-pa-md">
+                <div class="row no-wrap items-center">
+                  <q-icon 
+                    name="star"
+                    color="yellow-10"
+                    size="sm"></q-icon>
+                  <div class="col q-ml-sm">
+                    <span class="green-text">Custom sprites</span> are made by artists from the 
+                    <a href="https://discord.com/invite/2yynWRvBrB" target="_blank">Infinite Fusion Discord</a>
+                    and 
+                    <a href="https://www.reddit.com/r/PokemonInfiniteFusion/" target="_blank">Reddit</a>.
+                  </div>
+                </div>
+                <div class="q-mt-md">
+                  Generated sprites are from <a href="https://japeal.com/pkm/" target="_blank">Japeal</a>.
+                </div>
+              </q-menu>
+            </q-btn>
+
+            <div class="col"></div>
+
+            <q-btn
+              unelevated
+              color="blue-8"
+              no-caps
+              label="Calculate"
+              @click="resetFusions()"></q-btn>
+          </div>
+
+          <div class="text-caption">
+            Credit: <a href="https://twitter.com/SDM_0_" target="_blank">SDM0</a>, <a href="https://github.com/Aegide" target="_blank">Aegide</a>
+          </div>
+        </q-card>
+      
+        <fusion-pokemon
+          v-for="fusionPoke in fusionPokemon"
+          :key="fusionPoke.id"
+          :fusion-pokemon="fusionPoke"></fusion-pokemon>
+      
+        <q-inner-loading
+          style="z-index: 10000; position: fixed;" 
+          :showing="loading"></q-inner-loading>
+          
+        <template slot="loading">
+          <div 
+            class="row justify-center items-center q-py-xl"
+            style="column-span: all;">
+            <q-spinner-dots color="primary" size="40px" />
+          </div>
+        </template>
+      </q-infinite-scroll>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/vue@^2.0.0/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quasar@1.22.9/dist/quasar.umd.min.js"></script>
+    
+    <script src="./infiniteFusionData.js"></script>
+    <script src="./mapInfiniteFusionData.js"></script>
+    <script src="./pokemonFuser.js"></script>
+    <script src="./fusionPokemon.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
